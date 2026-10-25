@@ -50,6 +50,7 @@ interface PortfolioContextValue {
   updateRentStatus: (tenantId: string, isPaid: boolean) => Promise<void>;
   vacateTenant: (tenantId: string, vacatingDate: string) => Promise<void>;
   updateTenantRent: (tenantId: string, newRent: number) => Promise<void>;
+  updateTenantName: (tenantId: string, newName: string) => Promise<void>;
   addTenantNote: (tenantId: string, content: string) => Promise<void>;
   updateTenantNote: (id: string, content: string) => Promise<void>;
   deleteTenantNote: (id: string) => Promise<void>;
@@ -702,6 +703,45 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     [user, tenants, fetchPortfolio, log],
   );
 
+  const updateTenantName = useCallback<PortfolioContextValue["updateTenantName"]>(
+    async (tenantId, newName) => {
+      if (!user) throw new Error("You must be logged in to update tenant name");
+      const trimmed = newName.trim();
+      if (!trimmed) throw new Error("Tenant name cannot be empty");
+
+      const tenant = tenants.find((t) => t.id === tenantId);
+      if (!tenant) throw new Error("Tenant not found");
+
+      try {
+        const { error } = await supabase
+          .from("tenants")
+          .update({ name: trimmed })
+          .eq("id", tenantId)
+          .eq("owner_id", user.id);
+
+        if (error) {
+          console.error("Error updating tenant name:", error);
+          throw error;
+        }
+
+        // Optimistically update tenants and payments in state immediately
+        setTenants((prev) =>
+          prev.map((t) => (t.id === tenantId ? { ...t, name: trimmed } : t))
+        );
+        setPayments((prev) =>
+          prev.map((p) => (p.tenantId === tenantId ? { ...p, tenant: trimmed } : p))
+        );
+
+        // Sync with database
+        await fetchPortfolio();
+      } catch (err) {
+        console.error("Error in updateTenantName:", err);
+        throw err;
+      }
+    },
+    [user, tenants, fetchPortfolio],
+  );
+
   const addTenantNote = useCallback<PortfolioContextValue["addTenantNote"]>(
     async (tenantId, content) => {
       if (!user) return;
@@ -774,12 +814,13 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       updateRentStatus,
       vacateTenant,
       updateTenantRent,
+      updateTenantName,
       addTenantNote,
       updateTenantNote,
       deleteTenantNote,
       deleteProperty,
     }),
-    [properties, units, tenants, tenantNotes, payments, activity, isLoading, addProperty, updateProperty, addUnit, assignTenant, recordRent, resolveMaintenance, addExpense, updateRentStatus, vacateTenant, updateTenantRent, addTenantNote, updateTenantNote, deleteTenantNote, deleteProperty],
+    [properties, units, tenants, tenantNotes, payments, activity, isLoading, addProperty, updateProperty, addUnit, assignTenant, recordRent, resolveMaintenance, addExpense, updateRentStatus, vacateTenant, updateTenantRent, updateTenantName, addTenantNote, updateTenantNote, deleteTenantNote, deleteProperty],
   );
 
   return <PortfolioContext.Provider value={value}>{children}</PortfolioContext.Provider>;

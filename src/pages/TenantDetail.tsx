@@ -5,7 +5,7 @@ import { usePortfolio } from "../data/PortfolioContext";
 import { unitLabel } from "../data/selectors";
 import { currency, paymentLabel, paymentTone } from "../utils/format";
 import { TenantNotes } from "../components/property/TenantNotes";
-import { UpdateRentModal, VacateTenantModal, EditTenantRentModal } from "../components/property/UnitModals";
+import { UpdateRentModal, VacateTenantModal, EditTenantRentModal, EditTenantNameModal } from "../components/property/UnitModals";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Surface } from "../components/ui/Surface";
 import { StatDisplay } from "../components/ui/StatDisplay";
@@ -20,6 +20,7 @@ export default function TenantDetail() {
   const { tenants, payments, isLoading } = usePortfolio();
   const [editingRent, setEditingRent] = useState(false);
   const [editingAgreedRent, setEditingAgreedRent] = useState(false);
+  const [editingName, setEditingName] = useState(false);
   const [vacating, setVacating] = useState(false);
   const tenant = tenants.find((t) => t.id === tenantId);
 
@@ -69,7 +70,20 @@ export default function TenantDetail() {
         </nav>
         <PageHeader
           eyebrow={`Tenant since ${tenant.since}`}
-          title={tenant.name}
+          title={
+            <span className="inline-flex items-center gap-2 sm:gap-3 flex-wrap">
+              <span>{tenant.name}</span>
+              <button
+                type="button"
+                onClick={() => setEditingName(true)}
+                title="Edit tenant name"
+                aria-label="Edit tenant name"
+                className="inline-flex size-8 sm:size-9 items-center justify-center rounded-lg border border-[var(--color-line)] bg-white/60 text-[var(--color-ink-soft)] shadow-sm transition-all hover:bg-white hover:text-[var(--color-ink)] hover:border-[var(--color-ink-faint)] cursor-pointer active:scale-95"
+              >
+                <Pencil className="size-4" />
+              </button>
+            </span>
+          }
           description={
             <span>
               <Link to={`/properties/${tenant.propertyId}`} className="underline-offset-4 hover:text-[var(--color-ink)] hover:underline">
@@ -214,6 +228,12 @@ export default function TenantDetail() {
       <VacateTenantModal
         open={vacating}
         onClose={() => setVacating(false)}
+        tenant={tenant}
+      />
+
+      <EditTenantNameModal
+        open={editingName}
+        onClose={() => setEditingName(false)}
         tenant={tenant}
       />
     </div>

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, SearchX, UserPlus, Users } from "lucide-react";
+import { ChevronRight, Pencil, SearchX, UserPlus, Users } from "lucide-react";
 import { PageHeader } from "../components/ui/PageHeader";
 import { Surface } from "../components/ui/Surface";
 import { Button } from "../components/ui/Button";
@@ -13,7 +13,7 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { usePortfolio } from "../data/PortfolioContext";
 import { plural } from "../data/selectors";
 import { currency, paymentLabel, paymentTone } from "../utils/format";
-import { UpdateRentModal } from "../components/property/UnitModals";
+import { UpdateRentModal, EditTenantNameModal } from "../components/property/UnitModals";
 import type { Tenant } from "../data/types";
 
 export default function Tenants() {
@@ -21,6 +21,7 @@ export default function Tenants() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [renamingTenant, setRenamingTenant] = useState<Tenant | null>(null);
 
   const monthName = new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
@@ -88,7 +89,21 @@ export default function Tenants() {
                   <div className="flex md:hidden items-center gap-4 w-full">
                     <div className="shrink-0"><Avatar name={t.name} size="md" /></div>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-[14px] font-medium tracking-[-0.01em] text-[var(--color-ink)]">{t.name}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate text-[14px] font-medium tracking-[-0.01em] text-[var(--color-ink)]">{t.name}</span>
+                        <button
+                          type="button"
+                          title="Edit tenant name"
+                          aria-label={`Edit name for ${t.name}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRenamingTenant(t);
+                          }}
+                          className="inline-flex items-center justify-center size-6 rounded text-[var(--color-ink-faint)] transition-colors hover:bg-black/5 hover:text-[var(--color-ink)] cursor-pointer shrink-0"
+                        >
+                          <Pencil className="size-3.5" />
+                        </button>
+                      </div>
                       <div className="mt-0.5 truncate text-[12.5px] text-[var(--color-ink-soft)]">{t.property} · {t.unit}</div>
                     </div>
                     <div className="shrink-0 flex flex-col items-end gap-1.5">
@@ -116,6 +131,18 @@ export default function Tenants() {
                   <div className="hidden md:flex items-center gap-3 min-w-0">
                     <div className="shrink-0"><Avatar name={t.name} size="md" /></div>
                     <span className="truncate text-[14px] font-medium tracking-[-0.01em] text-[var(--color-ink)]">{t.name}</span>
+                    <button
+                      type="button"
+                      title="Edit tenant name"
+                      aria-label={`Edit name for ${t.name}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setRenamingTenant(t);
+                      }}
+                      className="inline-flex items-center justify-center size-7 rounded-lg text-[var(--color-ink-faint)] transition-colors hover:bg-black/5 hover:text-[var(--color-ink)] cursor-pointer shrink-0 opacity-70 hover:opacity-100"
+                    >
+                      <Pencil className="size-3.5" />
+                    </button>
                   </div>
                   
                   <div className="hidden md:block min-w-0">
@@ -166,6 +193,12 @@ export default function Tenants() {
         open={!!editingTenant}
         onClose={() => setEditingTenant(null)}
         tenant={editingTenant}
+      />
+
+      <EditTenantNameModal
+        open={!!renamingTenant}
+        onClose={() => setRenamingTenant(null)}
+        tenant={renamingTenant}
       />
     </div>
   );

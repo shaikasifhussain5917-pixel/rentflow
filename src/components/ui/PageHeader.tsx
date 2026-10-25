@@ -3,7 +3,7 @@ import { cn } from "../../utils/cn";
 
 interface PageHeaderProps {
   eyebrow?: string;
-  title: string;
+  title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
   className?: string;

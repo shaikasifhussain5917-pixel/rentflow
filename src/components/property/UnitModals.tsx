@@ -530,3 +530,105 @@ export function EditTenantRentModal({ open, onClose, tenant }: { open: boolean; 
   );
 }
 
+/* ------------------------------- Edit tenant name ------------------------------- */
+
+export function EditTenantNameModal({
+  open,
+  onClose,
+  tenant,
+}: {
+  open: boolean;
+  onClose: () => void;
+  tenant: Tenant | null;
+}) {
+  const { updateTenantName } = usePortfolio();
+  const [name, setName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (open && tenant) {
+      setName(tenant.name);
+      setError("");
+      setSuccess(false);
+      setIsSubmitting(false);
+    }
+  }, [open, tenant]);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!tenant) return;
+
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setError("Tenant name cannot be empty.");
+      return;
+    }
+
+    if (trimmed === tenant.name) {
+      onClose();
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError("");
+    setSuccess(false);
+    try {
+      await updateTenantName(tenant.id, trimmed);
+      setSuccess(true);
+      setTimeout(() => {
+        onClose();
+      }, 400);
+    } catch (err: any) {
+      setError(err?.message || "Failed to update tenant name. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!tenant) return null;
+
+  return (
+    <ActionModal
+      isSubmitting={isSubmitting}
+      open={open}
+      onClose={onClose}
+      title="Edit Tenant Name"
+      description="Update the displayed name for this tenant."
+      formId="edit-tenant-name-form"
+      submitLabel={isSubmitting ? "Saving..." : "Save Changes"}
+    >
+      <form id="edit-tenant-name-form" onSubmit={submit} className="space-y-4">
+        <div className="rounded-[10px] border border-[var(--color-line)] bg-[var(--color-surface-muted)] p-4 text-sm">
+          <div className="font-semibold text-[var(--color-ink)]">{tenant.name}</div>
+          <div className="text-[var(--color-ink-soft)] mt-1">
+            {tenant.property} · {tenant.unit}
+          </div>
+        </div>
+
+        <Field label="Tenant Name" error={error}>
+          <TextInput
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (error) setError("");
+            }}
+            placeholder="Enter tenant name"
+            autoFocus
+            disabled={isSubmitting}
+          />
+        </Field>
+
+        {success && (
+          <div className="flex items-center gap-2 rounded-lg bg-[var(--color-positive-wash)] px-3 py-2 text-[13px] font-medium text-[var(--color-positive)]">
+            <CheckCircle2 className="size-4 shrink-0" />
+            <span>Tenant name updated successfully!</span>
+          </div>
+        )}
+      </form>
+    </ActionModal>
+  );
+}
+
+
